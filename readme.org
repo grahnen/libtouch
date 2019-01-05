@@ -1,0 +1,8 @@
+* Libtouch
+Libtouch is a library for touch gestures.
+
+* TODO API
+** TODO Gesture Creation
+** TODO Interal State
+** TODO Gesture Updating
+** TODO Get Progress of Gestures
