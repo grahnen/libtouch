@@ -18,7 +18,7 @@ libtouch_gesture_get_progress
 #+END_SRC
 For all gestures, (sorted by progress) use
 #+BEGIN_SRC C
-libtouch_sort_progress_array
+libtouch_fill_progress_array
 #+END_SRC
 
 * Examples
