@@ -1,6 +1,5 @@
 #ifndef _LIBTOUCH_H
 #define _LIBTOUCH_H
-#include <stdbool.h>
 #include <stdint.h>
 
 enum libtouch_action_type {
@@ -69,29 +68,46 @@ enum libtouch_scale_dir {
 	LIBTOUCH_SCALE_DOWN = 1 << 1,
 };
 
+/**
+ * Represents the internal state.
+ */
 struct libtouch_engine;
+
+/**
+ * Represents a gesture,
+ * 
+ * a gesture is defined as a sequence of actions
+ */
 struct libtouch_gesture;
+
+/**
+ * Represents a part of a gesture.
+ */
 struct libtouch_action;
+
+/**
+ * A region or other delimited area, within which an action listens
+ */
 struct libtouch_target;
+
+/**
+ * Reference to gestures and their progress
+ */
+struct libtouch_gesture_progress {
+	struct libtouch_gesture *gesture;
+	double progress;
+};
+
 
 struct libtouch_engine *libtouch_engine_create();
 
 struct libtouch_gesture *libtouch_gesture_create(
-		struct libtouch_engine *engine);
+	struct libtouch_engine *engine);
 
 struct libtouch_target *libtouch_target_create(
-		struct libtouch_engine *engine, unsigned int x, unsigned int y,
-		unsigned int width, unsigned int height);
+	struct libtouch_engine *engine, unsigned int x, unsigned int y,
+	unsigned int width, unsigned int height);
 
-typedef bool (*candidate_handler)(struct libtouch_engine *,
-		struct libtouch_gesture *, void *user_data);
-
-/**
- * Iterates over the current gesture candidates in descending order of
- * progress. Return false to stop the iteration, or true to continue.
- */
-void libtouch_engine_get_candidates(struct libtouch_engine *engine,
-		candidate_handler handler, void user_data);
 
 /**
  * Informs the touch engine of an input event.
@@ -99,25 +115,55 @@ void libtouch_engine_get_candidates(struct libtouch_engine *engine,
  * timestamp: milliseconds from an arbitrary epoch (e.g. CLOCK_MONOTONIC)
  * slot: the slot of this event (e.g. which finger the event was caused by)
  */
-void libtouch_engine_touch_event(struct libtouch_engine *engine,
-		uint32_t timestamp, int slot, enum libtouch_touch_mode mode,
-		unsigned int x, unsigned int y);
+void libtouch_engine_touch_event(
+	struct libtouch_engine *engine,
+	uint32_t timestamp, int slot, enum libtouch_touch_mode mode,
+	unsigned int x, unsigned int y);
+
 
 /** Returns the progress of this gesture from 0..1. */
-double libtouch_gesture_get_progress(struct libtouch_gesture *gesture);
+double libtouch_gesture_get_progress(
+	struct libtouch_gesture *gesture);
+
+
+/**
+ * Fills an array of libtouch_gesture_progress pointers
+ * sorted by progress.
+ */
+double libtouch_fill_progress_array(
+	struct libtouch_gesture_progress **array, uint32_t count);
+
+/**
+ * Returns a completed gesture, and resets its progress
+ * if none exists, return NULL.
+ *
+ * Call repeatedly to get all finished gestures.
+ */
+struct libtouch_gesture *libtouch_handle_finished_gesture(
+	struct libtouch_engine *engine);
+
 
 /** Returns the active action for this gesture. */
 struct libtouch_action *libtouch_gesture_get_current_action(
-		struct libtouch_gesture *gesture);
+	struct libtouch_gesture *gesture);
 
 struct libtouch_action *libtouch_gesture_add_touch(
-		struct libtouch_gesture *gesture, uint32_t mode);
+	struct libtouch_gesture *gesture, uint32_t mode);
+
 struct libtouch_action *libtouch_gesture_add_move(
-		struct libtouch_gesture *gesture, uint32_t direction);
+	struct libtouch_gesture *gesture, uint32_t direction);
+
 struct libtouch_action *libtouch_gesture_add_rotate(
-		struct libtouch_gesture *gesture, uint32_t direction);
+	struct libtouch_gesture *gesture, uint32_t direction);
+
 struct libtouch_action *libtouch_gesture_add_scale(
-		struct libtouch_gesture *gesture, uint32_t direction);
+	struct libtouch_gesture *gesture, uint32_t direction);
+
+struct libtouch_action *libtouch_gesture_add_delay(
+	struct libtouch_gesture *gesture, uint32_t duration);
+
+
+
 
 /**
  * Sets the threshold of change for an action to be considered complete. The map
@@ -130,35 +176,30 @@ struct libtouch_action *libtouch_gesture_add_scale(
  * - LIBTOUCH_ACTION_DELAY:  milliseconds (must be positive)
  */
 void libtouch_action_set_threshold(
-		struct libtouch_action *action, int threshold);
+	struct libtouch_action *action, int threshold);
 
 /**
  * Sets a libtouch_target that the action must reach to be considered complete.
- * Only valid for LIBTOUCH_ACTION_MOVE actions, and only valid if a threshold is
- * not set.
+ * Valid for LIBTOUCH_ACTION_MOVE,
+ * where the movement must finish. Cannot be used together with treshold.
+ * 
+ * For LIBTOUCH_ACTION_TOUCH, target defines where we must press.
  */
 void libtouch_action_set_target(
-		struct libtouch_action *action, struct libtouch_target *target);
+	struct libtouch_action *action,
+	struct libtouch_target *target);
 
 /**
  * Sets the minimum duration this action must take place during to be considered
  * a match.
  */
-void libtouch_action_set_duration(struct libtouch_action *action,
-		uint32_t duration_ms);
+void libtouch_action_set_duration(
+	struct libtouch_action *action,
+	uint32_t duration_ms);
 
 /**
  * Gets the current progress of this action between 0 and 1.
  */
-double libtouch_action_get_progress(struct libtouch_action *action);
-
-/**
- * Gets the next action in this gesture, or NULL if there are none.
- */
-struct libtouch_action_get_next(struct libtouch_action *action);
-
-struct libtouch_target_set_boundaries(struct libtouch_target *target,
-		unsigned int x, unsigned int y,
-		unsigned int width, unsigned int height);
-
+double libtouch_action_get_progress(
+	struct libtouch_action *action);
 #endif

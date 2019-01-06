@@ -1,8 +1,59 @@
 * Libtouch
-Libtouch is a library for touch gestures.
+Libtouch is a library for touch gestures created under the guidance of the Sway project.
 
 * TODO API
 ** TODO Gesture Creation
+Sequential, is that good?
 ** TODO Interal State
+TBD
 ** TODO Gesture Updating
+Done in internal state in
+#+BEGIN_SRC C
+libtouch_engine_touch_event
+#+END_SRC
 ** TODO Get Progress of Gestures
+For individual gestures, we can use
+#+BEGIN_SRC C
+libtouch_gesture_get_progress
+#+END_SRC
+For all gestures, (sorted by progress) use
+#+BEGIN_SRC C
+libtouch_sort_progress_array
+#+END_SRC
+
+* Examples
+Two-finger hold
+#+BEGIN_SRC C
+g = libtouch_gesture_create(engine);
+touch = libtouch_gesture_add_touch(g, 0);
+libtouch_action_set_threshold(touch, 2);
+delay = libtouch_gesture_add_delay(g, 1000);
+#+END_SRC
+
+Double tap
+#+BEGIN_SRC C
+g = libtouch_gesture_create(engine);
+//First we touch
+first = libtouch_gesture_add_touch(g,0);
+//Then we 'untouch' within 100ms
+firstup = libtouch_gesture_add_touch(g,1);
+libtouch_action_set_duration(firstup, 100);
+//Then we do the same again.
+second = libtouch_gesture_add_touch(g,0);
+secondup = libtouch_gesture_add_touch(g,1);
+
+//BOTH must take at most 100ms
+libtouch_action_set_duration(second, 100);
+libtouch_action_set_duration(secondup, 100);
+#+END_SRC
+
+Swipe (at least 50 units) from left edge, note hard-coded height. should it be %?
+#+BEGIN_SRC C
+left_edge = libtouch_target_create(engine, 0, 0, 10, 1080);
+
+g = libtouch_gesture_create(engine);
+touch = libtouch_gesture_add_touch(g,0);
+libtouch_action_set_boundaries(touch, left_edge);
+move = libtouch_gesture_add_move(g, LIBTOUCH_MOVE_POSITIVE_X);
+libtouch_action_set_treshold(move, 50);
+#+END_SRC
