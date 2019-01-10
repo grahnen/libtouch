@@ -34,7 +34,7 @@ enum libtouch_action_type {
  */
 enum libtouch_touch_mode {
 	LIBTOUCH_TOUCH_UP = 1 << 0,
-	LIBTOUCH_TOUCH_DOWN 1 << 1,
+	LIBTOUCH_TOUCH_DOWN = 1 << 1,
 };
 
 /**
@@ -207,13 +207,13 @@ void libtouch_action_set_duration(
  * Gets the current progress of this action between 0 and 1.
  */
 double libtouch_action_get_progress(
-	struct libtouch_engine *engine
+	struct libtouch_engine *engine,
 	struct libtouch_action *action);
 
 
 /** Returns the progress of this gesture from 0..1. */
 double libtouch_gesture_get_progress(
-	struct libtouch_engine *engine
+	struct libtouch_engine *engine,
 	struct libtouch_gesture *gesture);
 
 void libtouch_gesture_reset_progress(
@@ -222,7 +222,7 @@ void libtouch_gesture_reset_progress(
 
 /** Returns the active action for this gesture. */
 struct libtouch_action *libtouch_gesture_get_current_action(
-	struct libtouch_engine *engine
+	struct libtouch_engine *engine,
 	struct libtouch_gesture *gesture);
 
 /**
