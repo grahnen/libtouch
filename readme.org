@@ -2,6 +2,7 @@
 #+DESCRIPTION: Libtouch is a library for touch gestures created under the guidance of the Sway project.
 
 * API
+THIS IS A WIP
 ** Target
 Represents an area or region on the screen.
 ** Action
@@ -17,7 +18,10 @@ Each action can have
 Decides how much/how many/etc the action must be performed. E.g. the number of fingers for a touch, or the lenght of a movement.
 *** Target
 Where the action must take place. A movement is considered complete when it reaches the target.
-*** 
+*** Duration
+Maximum duration within which an action must take place.
+*** Move Tolerance
+How much is minimum movement, before it is regarded as actual movement. E.g. a tap and hold may move X pixels without being regarded as a swipe.
 ** Gesture
 A gesture is a series of actions, each must be completed before the next begins.
 ** Engine
@@ -25,7 +29,7 @@ The `libtouch_engine` is responsible for controlling the internal state. i.e. de
 
 The inner state is updated through the functions
 
-#+BEGIN_SRC sh :wrap src C :exports results
+#+BEGIN_SRC C
 libtouch_engine_register_move
 libtouch_engine_register_touch
 #+END_SRC

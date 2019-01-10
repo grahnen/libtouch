@@ -60,7 +60,7 @@ enum libtouch_rotate_dir {
 };
 
 /**
- * Represents the direction in which a LIBTOUCH_ACTION_SCALE can occur. Both
+ * Represents the direction in which a LIBTOUCH_ACTION_PINCH can occur. Both
  * UP and DOWN corresponds to a change of any amount.
  */
 enum libtouch_scale_dir {
@@ -129,7 +129,7 @@ struct libtouch_target *libtouch_target_create(
 	unsigned int width, unsigned int height);
 
 /**
- * Informs the touch engine of an input event.
+ * Informs the touch engine of a touch event.
  *
  * timestamp: milliseconds from an arbitrary epoch (e.g. CLOCK_MONOTONIC)
  * slot: the slot of this event (e.g. which finger the event was caused by)
