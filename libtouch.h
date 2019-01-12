@@ -147,7 +147,7 @@ void libtouch_engine_register_touch(
  */
 void libtouch_engine_register_move(
 	struct libtouch_engine *engine,
-	uint32_t timestamp, int slot, enum libtouch_move_dir dir,
+	uint32_t timestamp, int slot,
 	int dx, int dy);
 
 
@@ -207,22 +207,18 @@ void libtouch_action_set_duration(
  * Gets the current progress of this action between 0 and 1.
  */
 double libtouch_action_get_progress(
-	struct libtouch_engine *engine,
 	struct libtouch_action *action);
 
 
 /** Returns the progress of this gesture from 0..1. */
 double libtouch_gesture_get_progress(
-	struct libtouch_engine *engine,
 	struct libtouch_gesture *gesture);
 
 void libtouch_gesture_reset_progress(
-	struct libtouch_engine *engine,
 	struct libtouch_gesture *gesture);
 
 /** Returns the active action for this gesture. */
 struct libtouch_action *libtouch_gesture_get_current_action(
-	struct libtouch_engine *engine,
 	struct libtouch_gesture *gesture);
 
 /**
