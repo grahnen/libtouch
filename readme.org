@@ -4,7 +4,9 @@
 * API
 THIS IS A WIP
 ** Target
-Represents an area or region on the screen.
+Represents an area or region on the screen. within which an action must take place.
+
+For movement actions, it represents where the movement must end.
 ** Action
 Represents one action, one part of a gesture.
 The possible actions are
@@ -21,11 +23,11 @@ Where the action must take place. A movement is considered complete when it reac
 *** Duration
 Maximum duration within which an action must take place.
 *** Move Tolerance
-How much is minimum movement, before it is regarded as actual movement. E.g. a tap and hold may move X pixels without being regarded as a swipe.
+How much is minimum movement, before it is regarded as actual movement. E.g. a tap and hold may move X pixels without being regarded as a swipe, or how much movement in the "wrong" direction is allowed.
 ** Gesture
 A gesture is a series of actions, each must be completed before the next begins.
 ** Engine
-The `libtouch_engine` is responsible for controlling the internal state. i.e. deciding which gestures are progressing, and how much.
+The `libtouch_engine` is responsible for controlling the memory allocation and freeing of other structures, as well as keeping them nice and tidy to be able to check them all.
 
 The inner state is updated through the functions
 

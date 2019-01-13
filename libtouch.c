@@ -468,9 +468,37 @@ void libtouch_gesture_reset_progress(libtouch_gesture *gesture) {
 	for(int i = 0; i < gesture->n_actions; i++) {
 		gesture->actions[i]->progress = 0;
 	}
+	while(gesture->touches != NULL) {
+		touch_list *l = gesture->touches;
+		gesture->touches = l->next;
+		free(l);
+	}
 	gesture->completed_actions = 0;
 }
 
 libtouch_action *libtouch_gesture_get_current_action(libtouch_gesture *gesture) {
 	return gesture->actions[gesture->completed_actions];
+}
+
+/*
+void libtouch_fill_progress_array(
+	libtouch_engine *engine,
+	libtouch_gesture_progress **arr,
+	uint32_t count);
+*/
+
+
+libtouch_gesture *libtouch_handle_finished_gesture(
+	libtouch_engine *engine)
+{
+	for(int i = 0; i < engine->n_gestures; i++) {
+		if(libtouch_gesture_get_progress(engine->gestures[i]) > 0.9) {
+			//It's done!
+			libtouch_gesture_reset_progress(engine->gestures[i]);
+			return engine->gestures[i];
+		}
+	}
+
+	return NULL;
+	
 }
