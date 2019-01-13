@@ -18,6 +18,7 @@ typedef struct touch_data {
 	unsigned int cury;
 } touch_data;
 
+
 double distance_dragged(touch_data *d){
 	return sqrt(
 		pow(d->startx - d->curx,2) +
@@ -97,6 +98,30 @@ typedef struct touch_list {
 	touch_data data;
 	struct touch_list *next;
 } touch_list;
+
+
+
+touch_data *get_touch_center(touch_list *touches) {
+	int count = 0;
+	touch_data *res = calloc(1,sizeof(touch_data));
+	touch_list *iter = touches;
+	while(iter != NULL) {
+		count++;
+		res->startx += iter->data.startx;
+		res->starty += iter->data.starty;
+		res->curx += iter->data.curx;
+		res->cury += iter->data.cury;
+		iter = iter->next;
+	}
+
+	res->curx /= count;
+	res->cury /= count;
+	res->startx /= count;
+	res->starty /= count;
+
+	return res;
+}
+
 
 
 typedef struct libtouch_action {
@@ -279,13 +304,13 @@ void libtouch_engine_register_touch(
 	}
 }
 
-touch_list *get_touch_slot(libtouch_gesture *g, int slot) {
+touch_data *get_touch_slot(libtouch_gesture *g, int slot) {
 	touch_list *t = g->touches;
 	while(t != NULL && t->data.slot != slot)
 	{
 		t = t->next;
 	}
-	return t;
+	return &t->data;
 }
 
 
@@ -295,6 +320,7 @@ void libtouch_engine_register_move(
 {
 	libtouch_gesture *g;
 	libtouch_action *a;
+	touch_data *avg;
 	for(int i = 0; i < engine->n_gestures; i++)
 	{
 
@@ -302,10 +328,10 @@ void libtouch_engine_register_move(
 		a = g->actions[g->completed_actions];
 
 
-		touch_list *t = get_touch_slot(g,slot);
+		touch_data *t = get_touch_slot(g,slot);
 		
-		t->data.curx +=dx;
-		t->data.cury +=dy;
+		t->curx +=dx;
+		t->cury +=dy;
 
 		
 		if(a->duration_ms < (timestamp - g->last_action_timestamp)){
@@ -317,23 +343,24 @@ void libtouch_engine_register_move(
 		switch(a->action_type) {
 		case LIBTOUCH_ACTION_TOUCH:
 		case LIBTOUCH_ACTION_DELAY:
-			if(distance_dragged(&t->data) > a->move_tolerance) {
+			if(distance_dragged(t) > a->move_tolerance) {
 				libtouch_gesture_reset_progress(g);
 			}
 			break;
 		case LIBTOUCH_ACTION_MOVE:
+			avg = get_touch_center(g->touches);
 			if(a->target != NULL)
 			{
 				
-				if(libtouch_target_contains(a->target, t->data.curx, t->data.cury)) {
+				if(libtouch_target_contains(a->target, avg->curx, avg->cury)) {
 					g->completed_actions++;
 				}
 			}
 			else
 			{
 				//TODO: Handle movement in direction.
-				double d = distance_dragged(&t->data);
-				double wrong = get_incorrect_drag_distance(&t->data,a->move.dir);
+				double d = distance_dragged(avg);
+				double wrong = get_incorrect_drag_distance(avg,a->move.dir);
 				if(wrong > a->move_tolerance) {
 					libtouch_gesture_reset_progress(g);
 				}
