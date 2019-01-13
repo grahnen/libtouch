@@ -25,6 +25,73 @@ double distance_dragged(touch_data *d){
 		);
 }
 
+enum libtouch_move_dir direction_dragged(touch_data *d) {
+	double dx = d->startx - d->curx;
+	double dy = d->starty - d->cury;
+
+	enum libtouch_move_dir direction = 0;
+
+	if(dx > 0) {
+		direction |= LIBTOUCH_MOVE_POSITIVE_X;
+	}
+	else if(dx < 0) {
+		direction |= LIBTOUCH_MOVE_NEGATIVE_X;
+	}
+
+	if(dy > 0) {
+		direction |= LIBTOUCH_MOVE_POSITIVE_Y;
+	}
+	else if (dy < 0) {
+		direction |= LIBTOUCH_MOVE_NEGATIVE_Y;
+	}
+
+	return direction;
+}
+
+
+double get_incorrect_drag_distance(touch_data *d, enum libtouch_move_dir direction) {
+	double incorrect_squared = 0;
+
+	double dx = d->startx - d->curx;
+	double dy = d->starty - d->cury;
+
+	if((direction & LIBTOUCH_MOVE_POSITIVE_X) == LIBTOUCH_MOVE_POSITIVE_X) {
+		if(dx < 0) {
+			incorrect_squared += pow(dx,2);
+		}
+	}
+	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_X) == LIBTOUCH_MOVE_NEGATIVE_X) {
+		if(dx > 0) {
+			incorrect_squared += pow(dx,2);
+		}
+	}
+	else
+	{
+		//Stationary in X
+		incorrect_squared += pow(dx,2);
+	}
+
+
+	if((direction & LIBTOUCH_MOVE_POSITIVE_Y) == LIBTOUCH_MOVE_POSITIVE_Y) {
+		if(dy < 0) {
+			incorrect_squared += pow(dy,2);
+		}
+	}
+	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_Y) == LIBTOUCH_MOVE_NEGATIVE_Y)
+	{
+		if(dy > 0) {
+			incorrect_squared += pow(dy,2);
+		}
+	}
+	else {
+		//Stationary in X
+		incorrect_squared += pow(dy,2);
+	}
+
+
+	return sqrt(incorrect_squared);
+}
+
 
 typedef struct touch_list {
 	touch_data data;
@@ -231,22 +298,33 @@ void libtouch_engine_register_move(
 	for(int i = 0; i < engine->n_gestures; i++)
 	{
 
+		g = engine->gestures[i];
+		a = g->actions[g->completed_actions];
+
+
 		touch_list *t = get_touch_slot(g,slot);
 		
 		t->data.curx +=dx;
 		t->data.cury +=dy;
 
-		g = engine->gestures[i];
-		a = g->actions[g->completed_actions];
+		
+		if(a->duration_ms < (timestamp - g->last_action_timestamp)){
+			//Timeout
+			libtouch_gesture_reset_progress(g);
+			continue;
+		}
+		
 		switch(a->action_type) {
 		case LIBTOUCH_ACTION_TOUCH:
 		case LIBTOUCH_ACTION_DELAY:
 			if(distance_dragged(&t->data) > a->move_tolerance) {
 				libtouch_gesture_reset_progress(g);
 			}
+			break;
 		case LIBTOUCH_ACTION_MOVE:
 			if(a->target != NULL)
 			{
+				
 				if(libtouch_target_contains(a->target, t->data.curx, t->data.cury)) {
 					g->completed_actions++;
 				}
@@ -254,7 +332,23 @@ void libtouch_engine_register_move(
 			else
 			{
 				//TODO: Handle movement in direction.
+				double d = distance_dragged(&t->data);
+				double wrong = get_incorrect_drag_distance(&t->data,a->move.dir);
+				if(wrong > a->move_tolerance) {
+					libtouch_gesture_reset_progress(g);
+				}
+				else {
+					a->progress = (d - wrong) / a->threshold;
+					if(a->progress > 1) {
+						g->completed_actions++;
+					}
+				}
 			}
+			break;
+		case LIBTOUCH_ACTION_PINCH:
+		case LIBTOUCH_ACTION_ROTATE:
+			//TODO
+			break;
 		}
 
 		
