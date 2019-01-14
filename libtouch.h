@@ -175,7 +175,7 @@ struct libtouch_action *libtouch_gesture_add_delay(
  * - LIBTOUCH_ACTION_TOUCH:  number of touch points
  * - LIBTOUCH_ACTION_MOVE:   positional units
  * - LIBTOUCH_ACTION_ROTATE: degrees
- * - LIBTOUCH_ACTION_PINCH:  positional units
+ * - LIBTOUCH_ACTION_PINCH:  scale (in percent) of original touch
  * - LIBTOUCH_ACTION_DELAY:  milliseconds (must be positive)
  */
 void libtouch_action_set_threshold(

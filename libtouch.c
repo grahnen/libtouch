@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <math.h>
 
+
+#define PI 3.14159265
+
 typedef struct libtouch_target {
 	unsigned int x,y,w,h;
 
@@ -122,6 +125,49 @@ touch_data *get_touch_center(touch_list *touches) {
 	return res;
 }
 
+double get_pinch_scale(touch_list *touches) {
+	int count = 0;
+	touch_data *center = get_touch_center(touches);
+	
+	touch_list *iter = touches;
+	double old = 0;
+	double new = 0;
+	while(iter != NULL)
+	{
+		count++;
+		old += sqrt(pow(center->startx - iter->data.startx,2) + pow(center->starty - iter->data.starty,2));
+		new += sqrt(pow(center->curx - iter->data.curx,2) + pow(center->cury - iter->data.cury,2));
+		iter = iter->next;
+	}
+	old /= count;
+	new /= count;
+
+	free(center);
+
+	return new / old;
+}
+
+
+double get_rotate_angle(touch_list *touches) {
+	int count = 0;
+	touch_data *center = get_touch_center(touches);
+	touch_list *iter = touches;
+	double old = 0;
+	double new = 0;
+	while(iter != NULL) {
+		count++;
+		old += atan2(iter->data.startx - center->startx, iter->data.starty - center->starty);
+
+		new += atan2(iter->data.curx - center->curx, iter->data.cury - center->cury);
+		iter = iter->next;
+	}
+
+	old /=count;
+	new /=count;
+
+	return (new - old) * 180.0 / PI;
+}
+
 
 
 typedef struct libtouch_action {
@@ -147,6 +193,7 @@ typedef struct libtouch_action {
 		//Pinch Action
 		struct {
 			enum libtouch_scale_dir dir;
+			
 		} pinch;
 		//Delay Action
 		struct {
@@ -333,12 +380,16 @@ void libtouch_engine_register_move(
 		t->curx +=dx;
 		t->cury +=dy;
 
+		avg = get_touch_center(g->touches);
 		
 		if(a->duration_ms < (timestamp - g->last_action_timestamp)){
 			//Timeout
 			libtouch_gesture_reset_progress(g);
 			continue;
 		}
+
+		double rot,scl,distance,wrong;
+
 		
 		switch(a->action_type) {
 		case LIBTOUCH_ACTION_TOUCH:
@@ -348,7 +399,6 @@ void libtouch_engine_register_move(
 			}
 			break;
 		case LIBTOUCH_ACTION_MOVE:
-			avg = get_touch_center(g->touches);
 			if(a->target != NULL)
 			{
 				
@@ -359,13 +409,13 @@ void libtouch_engine_register_move(
 			else
 			{
 				//TODO: Handle movement in direction.
-				double d = distance_dragged(avg);
-				double wrong = get_incorrect_drag_distance(avg,a->move.dir);
+				distance = distance_dragged(avg);
+				wrong = get_incorrect_drag_distance(avg,a->move.dir);
 				if(wrong > a->move_tolerance) {
 					libtouch_gesture_reset_progress(g);
 				}
 				else {
-					a->progress = (d - wrong) / a->threshold;
+					a->progress = (distance - wrong) / a->threshold;
 					if(a->progress > 1) {
 						g->completed_actions++;
 					}
@@ -373,10 +423,34 @@ void libtouch_engine_register_move(
 			}
 			break;
 		case LIBTOUCH_ACTION_PINCH:
+			distance = distance_dragged(avg);
+			if(distance > a->move_tolerance) {
+				libtouch_gesture_reset_progress(g);
+			}
+			else {
+			
+				scl = get_pinch_scale(g->touches);
+
+				if(scl > ((double) a->threshold) / 100.0) {
+					g->completed_actions++;
+				}
+			}
+			break;
 		case LIBTOUCH_ACTION_ROTATE:
-			//TODO
+			distance = distance_dragged(avg);
+			if(distance > a->move_tolerance) {
+				libtouch_gesture_reset_progress(g);
+			}
+			else {
+				rot = get_rotate_angle(g->touches);
+				if(rot > a->threshold){
+					g->completed_actions++;
+				}
+			}
 			break;
 		}
+
+		free(avg);
 
 		
 		
