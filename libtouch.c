@@ -9,16 +9,16 @@
 #define PI 3.14159265
 
 typedef struct libtouch_target {
-	unsigned int x,y,w,h;
+	double x,y,w,h;
 
 } libtouch_target;
 
 typedef struct touch_data {
 	int slot;
-	unsigned int startx;
-	unsigned int starty;
-	unsigned int curx;
-	unsigned int cury;
+	double startx;
+	double starty;
+	double curx;
+	double cury;
 } touch_data;
 
 
@@ -172,7 +172,7 @@ double get_rotate_angle(touch_list *touches) {
 
 typedef struct libtouch_action {
 	enum libtouch_action_type action_type;
-	int move_tolerance;
+	double move_tolerance;
 	libtouch_target* target;
 	int threshold;
 	uint32_t duration_ms;
@@ -255,17 +255,17 @@ libtouch_gesture *libtouch_gesture_create(libtouch_engine *engine) {
 }
 
 
-void libtouch_action_move_tolerance(libtouch_action *action, int min){
+void libtouch_action_move_tolerance(libtouch_action *action, double min){
 	action->move_tolerance = min;
 }
 
-void libtouch_gesture_move_tolerance(libtouch_gesture *gesture, int min) {
+void libtouch_gesture_move_tolerance(libtouch_gesture *gesture, double min) {
 	for(int i = 0; i < gesture->n_actions; i++){
 		libtouch_action_move_tolerance(gesture->actions[i], min);
 	}
 }
 
-void libtouch_engine_move_tolerance(libtouch_engine *engine, int min) {
+void libtouch_engine_move_tolerance(libtouch_engine *engine, double min) {
 	for(int i = 0; i < engine->n_gestures; i++){
 		libtouch_gesture_move_tolerance(engine->gestures[i], min);
 	}
@@ -273,8 +273,8 @@ void libtouch_engine_move_tolerance(libtouch_engine *engine, int min) {
 
 
 libtouch_target *libtouch_target_create(libtouch_engine *engine,
-					unsigned int x, unsigned int y,
-					unsigned int width, unsigned int height) {
+					double x, double y,
+					double width, double height) {
 	//Increase array size
 	libtouch_target **arr = malloc(sizeof(libtouch_target*) * (1 + engine->n_targets));
 	memcpy(arr, engine->targets, engine->n_targets);
@@ -291,14 +291,14 @@ libtouch_target *libtouch_target_create(libtouch_engine *engine,
 }
 
 
-bool libtouch_target_contains(libtouch_target *target, unsigned int x, unsigned int y){
+bool libtouch_target_contains(libtouch_target *target, double x, double y){
 	return !(target->x < x || target->y < y || x > (target->x + target->w) || y > (target->y + target->h));
 }
 
 void libtouch_engine_register_touch(
 	libtouch_engine *engine,
 	uint32_t timestamp, int slot, enum libtouch_touch_mode mode,
-	unsigned int x, unsigned int y)
+	double x, double y)
 {
 	libtouch_gesture *g;
 	libtouch_action *a;
@@ -363,7 +363,7 @@ touch_data *get_touch_slot(libtouch_gesture *g, int slot) {
 
 void libtouch_engine_register_move(
 	libtouch_engine *engine,
-	uint32_t timestamp, int slot, int dx, int dy)
+	uint32_t timestamp, int slot, double dx, double dy)
 {
 	libtouch_gesture *g;
 	libtouch_action *a;

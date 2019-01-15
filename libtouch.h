@@ -111,22 +111,22 @@ struct libtouch_gesture *libtouch_gesture_create(struct libtouch_engine *engine)
  * useful for, for instance long pressing, in case of a not 100% stable finger
  * or to ignore possible miss-swipes 
  */
-void libtouch_action_move_tolerance(struct libtouch_action *action, int min);
+void libtouch_action_move_tolerance(struct libtouch_action *action, double min);
 
 /**
  * sets move tolerance for all actions of a gesture.
  */
-void libtouch_gesture_move_tolerance(struct libtouch_gesture *gesture, int min);
+void libtouch_gesture_move_tolerance(struct libtouch_gesture *gesture, double min);
 
 /**
  * and for all gestures
  */
-void libtouch_engine_move_tolerance(struct libtouch_engine *engine, int min);
+void libtouch_engine_move_tolerance(struct libtouch_engine *engine, double min);
 
 
 struct libtouch_target *libtouch_target_create(
-	struct libtouch_engine *engine, unsigned int x, unsigned int y,
-	unsigned int width, unsigned int height);
+	struct libtouch_engine *engine, double x, double y,
+	double width, double height);
 
 /**
  * Informs the touch engine of a touch event.
@@ -137,7 +137,7 @@ struct libtouch_target *libtouch_target_create(
 void libtouch_engine_register_touch(
 	struct libtouch_engine *engine,
 	uint32_t timestamp, int slot, enum libtouch_touch_mode mode,
-	unsigned int x, unsigned int y);
+	double x, double y);
 
 /**
  * Informs the touch engine of a touch movement event.
@@ -148,7 +148,7 @@ void libtouch_engine_register_touch(
 void libtouch_engine_register_move(
 	struct libtouch_engine *engine,
 	uint32_t timestamp, int slot,
-	int dx, int dy);
+	double dx, double dy);
 
 
 struct libtouch_action *libtouch_gesture_add_touch(
@@ -173,7 +173,7 @@ struct libtouch_action *libtouch_gesture_add_delay(
  * of threshold units to action type is as follows:
  *
  * - LIBTOUCH_ACTION_TOUCH:  number of touch points
- * - LIBTOUCH_ACTION_MOVE:   positional units
+ * - LIBTOUCH_ACTION_MOVE:   positional units (percent of screen)
  * - LIBTOUCH_ACTION_ROTATE: degrees
  * - LIBTOUCH_ACTION_PINCH:  scale (in percent) of original touch
  * - LIBTOUCH_ACTION_DELAY:  milliseconds (must be positive)
