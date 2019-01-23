@@ -8,7 +8,7 @@ m_dep = cc.find_library('m', required : false)
 
 
 install_headers('libtouch.h')
-libtouch = library('touch', 'libtouch.c', dependencies : m_dep, install : true)
+libtouch = library('libtouch', 'libtouch.c', dependencies : m_dep, install : true)
 
 pkgconfig = import('pkgconfig')
 pkgconfig.generate(libtouch)
