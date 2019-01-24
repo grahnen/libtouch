@@ -466,6 +466,8 @@ void libtouch_engine_register_move(
 void libtouch_add_action(libtouch_gesture *gesture, libtouch_action *action){
 	libtouch_action **new_array = malloc(sizeof(libtouch_action*) * (gesture->n_actions + 1));
 	memcpy(new_array, gesture->actions, sizeof(libtouch_action*) * (gesture->n_actions));
+	free(gesture->actions);
+	gesture->actions = new_array;
 	gesture->actions[gesture->n_actions] = action;
 	gesture->n_actions++;
 }
