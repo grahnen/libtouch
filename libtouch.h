@@ -68,6 +68,11 @@ enum libtouch_scale_dir {
 	LIBTOUCH_PINCH_OUT = 1 << 1,
 };
 
+struct libtouch_gesture_progress;
+
+struct libtouch_progress_tracker;
+
+
 /**
  * Represents the internal state. The only holder of state information.
  * 
@@ -97,10 +102,6 @@ struct libtouch_target;
 /**
  * Reference to gestures and their progress
  */
-struct libtouch_gesture_progress {
-	struct libtouch_gesture *gesture;
-	double progress;
-};
 
 struct libtouch_engine *libtouch_engine_create();
 
@@ -134,8 +135,8 @@ struct libtouch_target *libtouch_target_create(
  * timestamp: milliseconds from an arbitrary epoch (e.g. CLOCK_MONOTONIC)
  * slot: the slot of this event (e.g. which finger the event was caused by)
  */
-void libtouch_engine_register_touch(
-	struct libtouch_engine *engine,
+void libtouch_progress_register_touch(
+	struct libtouch_progress_tracker *t,
 	uint32_t timestamp, int slot, enum libtouch_touch_mode mode,
 	double x, double y);
 
@@ -145,8 +146,8 @@ void libtouch_engine_register_touch(
  * timestamp: milliseconds from an arbitrary epoch (e.g. CLOCK_MONOTONIC)
  * slot: the slot of the event (e.g. which finger)
  */
-void libtouch_engine_register_move(
-	struct libtouch_engine *engine,
+void libtouch_progress_register_move(
+	struct libtouch_progress_tracker *t,
 	uint32_t timestamp, int slot,
 	double dx, double dy);
 
@@ -201,8 +202,6 @@ void libtouch_action_set_duration(
 	struct libtouch_action *action,
 	uint32_t duration_ms);
 
-
-
 /**
  * Gets the current progress of this action between 0 and 1.
  */
@@ -212,14 +211,14 @@ double libtouch_action_get_progress(
 
 /** Returns the progress of this gesture from 0..1. */
 double libtouch_gesture_get_progress(
-	struct libtouch_gesture *gesture);
+	struct libtouch_gesture_progress *gesture);
 
 void libtouch_gesture_reset_progress(
-	struct libtouch_gesture *gesture);
+	struct libtouch_gesture_progress *gesture);
 
 /** Returns the active action for this gesture. */
 struct libtouch_action *libtouch_gesture_get_current_action(
-	struct libtouch_gesture *gesture);
+	struct libtouch_gesture_progress *gesture);
 
 /**
  * Fills an array of libtouch_gesture_progress pointers
@@ -237,7 +236,7 @@ double libtouch_fill_progress_array(
  * Call repeatedly to get all finished gestures.
  */
 struct libtouch_gesture *libtouch_handle_finished_gesture(
-	struct libtouch_engine *engine);
+	struct libtouch_progress_tracker *tracker);
 
 
 #endif
