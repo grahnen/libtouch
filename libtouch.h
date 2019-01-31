@@ -206,7 +206,7 @@ void libtouch_action_set_duration(
  * Gets the current progress of this action between 0 and 1.
  */
 double libtouch_action_get_progress(
-	struct libtouch_action *action);
+	struct libtouch_progress_tracker *tracker);
 
 
 /** Returns the progress of this gesture from 0..1. */
@@ -238,5 +238,7 @@ double libtouch_fill_progress_array(
 struct libtouch_gesture *libtouch_handle_finished_gesture(
 	struct libtouch_progress_tracker *tracker);
 
+struct libtouch_progress_tracker *get_progress_tracker(
+	struct libtouch_engine *engine);
 
 #endif
