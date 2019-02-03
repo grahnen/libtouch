@@ -114,16 +114,6 @@ struct libtouch_gesture *libtouch_gesture_create(struct libtouch_engine *engine)
  */
 void libtouch_action_move_tolerance(struct libtouch_action *action, double min);
 
-/**
- * sets move tolerance for all actions of a gesture.
- */
-void libtouch_gesture_move_tolerance(struct libtouch_gesture *gesture, double min);
-
-/**
- * and for all gestures
- */
-void libtouch_engine_move_tolerance(struct libtouch_engine *engine, double min);
-
 
 struct libtouch_target *libtouch_target_create(
 	struct libtouch_engine *engine, double x, double y,
@@ -221,7 +211,7 @@ struct libtouch_action *libtouch_gesture_get_current_action(
  * sorted by progress.
  */
 double libtouch_fill_progress_array(
-	struct libtouch_engine *engine,
+	struct libtouch_progress_tracker *tracker,
 	struct libtouch_gesture_progress **array,
 	uint32_t count);
 
@@ -238,8 +228,11 @@ struct libtouch_progress_tracker *libtouch_progress_tracker_create(
 	struct libtouch_engine *engine);
 
 uint32_t libtouch_progress_tracker_n_gestures(struct libtouch_progress_tracker *t);
-struct libtouch_gesture_progress *libtouch_gesture_get_progress(struct libtouch_progress_tracker *y, uint32_t index);
 
-double libtouch_gesture_progress_get_progress(struct libtouch_gesture_progress *gesture);
+struct libtouch_gesture_progress *libtouch_gesture_get_progress(
+	struct libtouch_progress_tracker *y, uint32_t index);
+
+double libtouch_gesture_progress_get_progress(
+	struct libtouch_gesture_progress *gesture);
 
 #endif
