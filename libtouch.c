@@ -56,15 +56,15 @@ enum libtouch_move_dir direction_dragged(touch_data *d) {
 double get_incorrect_drag_distance(touch_data *d, enum libtouch_move_dir direction) {
 	double incorrect_squared = 0;
 
-	double dx = d->startx - d->curx;
-	double dy = d->starty - d->cury;
+	double dx = d->curx - d->startx;
+	double dy = d->cury - d->starty;
 
-	if((direction & LIBTOUCH_MOVE_POSITIVE_X) == LIBTOUCH_MOVE_POSITIVE_X) {
+	if((direction & LIBTOUCH_MOVE_POSITIVE_X) != 0) {
 		if(dx < 0) {
 			incorrect_squared += pow(dx,2);
 		}
 	}
-	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_X) == LIBTOUCH_MOVE_NEGATIVE_X) {
+	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_X) != 0) {
 		if(dx > 0) {
 			incorrect_squared += pow(dx,2);
 		}
@@ -76,19 +76,19 @@ double get_incorrect_drag_distance(touch_data *d, enum libtouch_move_dir directi
 	}
 
 
-	if((direction & LIBTOUCH_MOVE_POSITIVE_Y) == LIBTOUCH_MOVE_POSITIVE_Y) {
+	if((direction & LIBTOUCH_MOVE_POSITIVE_Y) != 0) {
 		if(dy < 0) {
 			incorrect_squared += pow(dy,2);
 		}
 	}
-	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_Y) == LIBTOUCH_MOVE_NEGATIVE_Y)
+	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_Y) != 0)
 	{
 		if(dy > 0) {
 			incorrect_squared += pow(dy,2);
 		}
 	}
 	else {
-		//Stationary in X
+		//Stationary in Y
 		incorrect_squared += pow(dy,2);
 	}
 
@@ -102,6 +102,32 @@ typedef struct touch_list {
 	struct touch_list *next;
 } touch_list;
 
+
+touch_list *get_touch(touch_list *touch, int slot) {
+	touch_list *ptr = touch;
+	while(ptr != NULL) {
+		if(ptr->data.slot == slot)
+			return ptr;
+	}
+	return NULL;
+}
+
+void remove_touch(touch_list **touch, int slot) {
+	if(*touch == NULL)
+		return;
+
+	
+	
+	if((*touch)->data.slot == slot)
+	{
+		touch_list *tmp = *touch;
+		(*touch) = (*touch)->next;
+		free(tmp);
+		return;
+	}
+
+	remove_touch(&(*touch)->next, slot);
+}
 
 
 touch_data *get_touch_center(touch_list *touches) {
@@ -211,7 +237,7 @@ typedef struct libtouch_gesture {
 typedef struct libtouch_engine {
 	libtouch_gesture** gestures;
 	uint32_t n_gestures;
-
+	
 	libtouch_target **targets;
 	uint32_t n_targets;
 } libtouch_engine;
@@ -249,13 +275,18 @@ libtouch_progress_tracker *libtouch_progress_tracker_create(libtouch_engine *eng
 	for(int i = 0; i < engine->n_gestures; i++) {
 		t->gesture_progress[i].gesture = engine->gestures[i];
 	}
+	t->n_gestures = engine->n_gestures;
 
 	return t;
 }
 
+uint32_t libtouch_progress_tracker_n_gestures(libtouch_progress_tracker *t) {
+  return t->n_gestures;
+}
+
 libtouch_gesture *libtouch_gesture_create(libtouch_engine *engine) {
 	//Increase gesture array size.
-	libtouch_gesture **gestures = malloc(sizeof(libtouch_gesture*) * engine->n_gestures + 1);
+	libtouch_gesture **gestures = malloc(sizeof(libtouch_gesture*) * (1 + engine->n_gestures));
 	memcpy(gestures, engine->gestures, sizeof(libtouch_gesture*) * engine->n_gestures);
 	free(engine->gestures);
 	engine->gestures = gestures;
@@ -290,25 +321,27 @@ void libtouch_engine_move_tolerance(libtouch_engine *engine, double min) {
 
 libtouch_target *libtouch_target_create(libtouch_engine *engine,
 					double x, double y,
-					double width, double height) {
+					double width, double height) {	
 	//Increase array size
 	libtouch_target **arr = malloc(sizeof(libtouch_target*) * (1 + engine->n_targets));
-	memcpy(arr, engine->targets, engine->n_targets);
-
-	libtouch_target *t = engine->targets[engine->n_targets];
+	memcpy(arr, engine->targets, sizeof(libtouch_target*) * engine->n_targets);
+	free(engine->targets);
+	engine->targets = arr;
+	engine->n_targets++;
+	
+	libtouch_target *t = malloc(sizeof(libtouch_target));
 	t->x = x;
 	t->y = y;
 	t->w = width;
 	t->h = height;
-
-	engine->n_targets++;
-
+	engine->targets[engine->n_targets-1] = t;
 	return t;
 }
 
 
 bool libtouch_target_contains(libtouch_target *target, double x, double y){
-	return !(target->x < x || target->y < y || x > (target->x + target->w) || y > (target->y + target->h));
+  return target == NULL || (x > target->x && x < (target->x + target->w) &&
+			    y > target->y && y < (target->y + target->h));
 }
 
 void libtouch_progress_register_touch(
@@ -323,13 +356,20 @@ void libtouch_progress_register_touch(
 	{
 		p = &t->gesture_progress[i];
 		g = p->gesture;
+		if(p->completed_actions == g->n_actions) {
+			//Gesture already completed, but not yet handled.
+			continue;
+		}
 		a = g->actions[p->completed_actions];
+		
 		if(
-			(p->completed_actions == 0 || a->duration_ms < (timestamp - p->last_action_timestamp)) &&
+			(p->completed_actions == 0 ||
+			 a->duration_ms > (timestamp - p->last_action_timestamp)) &&
 			a->action_type == LIBTOUCH_ACTION_TOUCH &&
-			a->touch.mode == mode &&
-			libtouch_target_contains(a->target, x,y)) {
-			p->action_progress += 1.0 / a->threshold;
+			(a->touch.mode & mode) == mode &&
+			libtouch_target_contains(a->target,x,y)) {
+		  
+			p->action_progress += 1.0 / ((double) a->threshold);
 
 			if(mode == LIBTOUCH_TOUCH_DOWN) {
 				touch_list *tl = malloc(sizeof(touch_list));
@@ -344,20 +384,11 @@ void libtouch_progress_register_touch(
 			}
 			else
 			{
-				touch_list *prev = p->touches;
-				touch_list *c = p->touches;
-				while(c != NULL && c->data.slot != slot){
-					prev = c;
-					c = c->next;
-				}
-
-				if(c != NULL){
-					prev->next = c->next;
-					free(c);
-				}
+				remove_touch(&p->touches,slot);
 			}
 			
 			if(p->action_progress > 0.9) {
+				p->action_progress = 0;
 				p->completed_actions++;
 				p->last_action_timestamp = timestamp;
 			}
@@ -375,13 +406,15 @@ touch_data *get_touch_slot(libtouch_gesture_progress *g, int slot) {
 	{
 		t = t->next;
 	}
+	if(t == NULL)
+	  return NULL;
 	return &t->data;
 }
 
 
 void libtouch_progress_register_move(
 	libtouch_progress_tracker *t,
-	uint32_t timestamp, int slot, double dx, double dy)
+	uint32_t timestamp, int slot, double nx, double ny)
 {
 	libtouch_gesture_progress *p;
 	libtouch_gesture *g;
@@ -391,13 +424,20 @@ void libtouch_progress_register_move(
 	{
 		p = &t->gesture_progress[i];
 		g = p->gesture;
+		if(p->completed_actions == g->n_actions) {
+			//Gesture already completed
+			continue;
+		}
+
 		a = g->actions[p->completed_actions];
 
 
 		touch_data *td = get_touch_slot(p,slot);
-		
-		td->curx +=dx;
-		td->cury +=dy;
+		if(td == NULL){
+		  return;
+		}
+		td->curx = nx;
+		td->cury = ny;
 
 		avg = get_touch_center(p->touches);
 		
@@ -432,7 +472,7 @@ void libtouch_progress_register_move(
 				distance = distance_dragged(avg);
 				wrong = get_incorrect_drag_distance(avg,a->move.dir);
 				if(wrong > a->move_tolerance) {
-					libtouch_gesture_reset_progress(p);
+				  libtouch_gesture_reset_progress(p);
 				}
 				else {
 					p->action_progress = (distance - wrong) / a->threshold;
@@ -497,10 +537,10 @@ void libtouch_add_action(libtouch_gesture *gesture, libtouch_action *action){
 
 libtouch_action *create_action(){
 	libtouch_action *action = malloc(sizeof(libtouch_action));
-	action->duration_ms = 0;
+	action->duration_ms = 1000;
 	action->target = NULL;
-	action->move_tolerance = 0;
-	action->threshold = 0;
+	action->move_tolerance = 1000;
+	action->threshold = 1;
 	return action;
 }
 
@@ -575,14 +615,13 @@ void libtouch_action_set_duration(
 	action->duration_ms = duration_ms;
 }
 
-
-double libtouch_gesture_get_progress(libtouch_gesture_progress *gesture) {
+double libtouch_gesture_progress_get_progress(libtouch_gesture_progress *gesture) {
 	double n_actions = ((double)gesture->gesture->n_actions);
 	double n_complete= ((double)gesture->completed_actions);
 	double current_pr= ((double)gesture->action_progress);
 	return (n_complete + current_pr) / n_actions;
-}
 
+}
 void libtouch_gesture_reset_progress(libtouch_gesture_progress *progress) {
 	while(progress->touches != NULL) {
 		touch_list *l = progress->touches;
@@ -591,6 +630,15 @@ void libtouch_gesture_reset_progress(libtouch_gesture_progress *progress) {
 	}
 	progress->completed_actions = 0;
 	progress->action_progress = 0;
+}
+
+libtouch_gesture_progress *libtouch_gesture_get_progress(libtouch_progress_tracker *t,
+							 uint32_t index) {
+	if(index > t->n_gestures - 1)
+		return NULL;
+
+
+	return &t->gesture_progress[index];
 }
 
 libtouch_action *libtouch_gesture_get_current_action(libtouch_gesture_progress *progress) {
@@ -609,7 +657,7 @@ libtouch_gesture *libtouch_handle_finished_gesture(
 	libtouch_progress_tracker *tracker)
 {
 	for(int i = 0; i < tracker->n_gestures; i++) {
-		if(libtouch_gesture_get_progress(&tracker->gesture_progress[i]) > 0.9) {
+		if(libtouch_gesture_progress_get_progress(&tracker->gesture_progress[i]) > 0.9) {
 			//It's done!
 			libtouch_gesture_reset_progress(&tracker->gesture_progress[i]);
 			return tracker->gesture_progress[i].gesture;
@@ -619,3 +667,4 @@ libtouch_gesture *libtouch_handle_finished_gesture(
 	return NULL;
 	
 }
+

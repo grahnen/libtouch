@@ -209,10 +209,6 @@ double libtouch_action_get_progress(
 	struct libtouch_progress_tracker *tracker);
 
 
-/** Returns the progress of this gesture from 0..1. */
-double libtouch_gesture_get_progress(
-	struct libtouch_gesture_progress *gesture);
-
 void libtouch_gesture_reset_progress(
 	struct libtouch_gesture_progress *gesture);
 
@@ -238,7 +234,12 @@ double libtouch_fill_progress_array(
 struct libtouch_gesture *libtouch_handle_finished_gesture(
 	struct libtouch_progress_tracker *tracker);
 
-struct libtouch_progress_tracker *get_progress_tracker(
+struct libtouch_progress_tracker *libtouch_progress_tracker_create(
 	struct libtouch_engine *engine);
+
+uint32_t libtouch_progress_tracker_n_gestures(struct libtouch_progress_tracker *t);
+struct libtouch_gesture_progress *libtouch_gesture_get_progress(struct libtouch_progress_tracker *y, uint32_t index);
+
+double libtouch_gesture_progress_get_progress(struct libtouch_gesture_progress *gesture);
 
 #endif
