@@ -154,6 +154,7 @@ double get_pinch_scale(touch_list *touches) {
 	while(iter != NULL)
 	{
 		count++;
+
 		old += sqrt(pow(center->startx - iter->data.startx,2) + pow(center->starty - iter->data.starty,2));
 		new += sqrt(pow(center->curx - iter->data.curx,2) + pow(center->cury - iter->data.cury,2));
 		iter = iter->next;
@@ -447,7 +448,7 @@ void libtouch_progress_register_move(libtouch_progress_tracker *t,
 			continue;
 		}
 
-		double rot,scl,distance,wrong;
+		double rot,scl,distance,wrong,threshold;
 
 		
 		switch (a->action_type) {
@@ -484,10 +485,17 @@ void libtouch_progress_register_move(libtouch_progress_tracker *t,
 			if (distance > a->move_tolerance) {
 				libtouch_gesture_reset_progress(p);
 			} else {
-			
-				scl = get_pinch_scale(p->touches);
 
-				if(scl > ((double) a->threshold) / 100.0) {
+			  
+				threshold = ((double) a->threshold) / 100.0;
+				scl = get_pinch_scale(p->touches);
+				if(a->pinch.dir == LIBTOUCH_PINCH_OUT) {
+					p->action_progress = (scl - 1.0) / (threshold - 1.0);
+				} else {
+					p->action_progress = 1.0 - (scl - threshold) / (1.0 - threshold);
+				}
+				p->action_progress *= 100;
+				if(p->action_progress > 0.9) {
 					p->completed_actions++;
 					p->action_progress = 0;
 				}
@@ -531,9 +539,9 @@ void libtouch_add_action(libtouch_gesture *gesture, libtouch_action *action){
 
 libtouch_action *create_action(){
 	libtouch_action *action = malloc(sizeof(libtouch_action));
-	action->duration_ms = 1000;
+	action->duration_ms = 2000;
 	action->target = NULL;
-	action->move_tolerance = 1000;
+	action->move_tolerance = INFINITY;
 	action->threshold = 1;
 	return action;
 }
@@ -583,7 +591,6 @@ struct libtouch_action *libtouch_gesture_add_delay(struct libtouch_gesture *gest
 	return action;
 }
 
-
 void libtouch_action_set_threshold(libtouch_action *action,
 				   int threshold) {
 	action->threshold = threshold;
@@ -630,10 +637,9 @@ libtouch_action *libtouch_gesture_get_current_action(libtouch_gesture_progress *
 }
 
 
-libtouch_gesture *libtouch_handle_finished_gesture(	libtouch_progress_tracker *tracker) {
+libtouch_gesture *libtouch_handle_finished_gesture(libtouch_progress_tracker *tracker) {
 	for(int i = 0; i < tracker->n_gestures; i++) {
 		if(libtouch_gesture_progress_get_progress(&tracker->gesture_progress[i]) > 0.9) {
-			//It's done!
 			libtouch_gesture_reset_progress(&tracker->gesture_progress[i]);
 			return tracker->gesture_progress[i].gesture;
 		}
