@@ -35,17 +35,15 @@ enum libtouch_move_dir direction_dragged(touch_data *d) {
 
 	enum libtouch_move_dir direction = 0;
 
-	if(dx > 0) {
+	if (dx > 0) {
 		direction |= LIBTOUCH_MOVE_POSITIVE_X;
-	}
-	else if(dx < 0) {
+	} else if (dx < 0) {
 		direction |= LIBTOUCH_MOVE_NEGATIVE_X;
 	}
 
-	if(dy > 0) {
+	if (dy > 0) {
 		direction |= LIBTOUCH_MOVE_POSITIVE_Y;
-	}
-	else if (dy < 0) {
+	} else if (dy < 0) {
 		direction |= LIBTOUCH_MOVE_NEGATIVE_Y;
 	}
 
@@ -64,8 +62,7 @@ double get_incorrect_drag_distance(touch_data *d,
 		if(dx < 0) {
 			incorrect_squared += pow(dx,2);
 		}
-	}
-	else if ((direction & LIBTOUCH_MOVE_NEGATIVE_X) != 0) {
+	} else if ((direction & LIBTOUCH_MOVE_NEGATIVE_X) != 0) {
 		if(dx > 0) {
 			incorrect_squared += pow(dx,2);
 		}
@@ -73,7 +70,6 @@ double get_incorrect_drag_distance(touch_data *d,
 		//Stationary in X
 		incorrect_squared += pow(dx,2);
 	}
-
 
 	if((direction & LIBTOUCH_MOVE_POSITIVE_Y) != 0) {
 		if(dy < 0) {
@@ -100,8 +96,9 @@ typedef struct touch_list {
 touch_list *get_touch(touch_list *touch, int slot) {
 	touch_list *ptr = touch;
 	while(ptr != NULL) {
-		if(ptr->data.slot == slot)
+		if(ptr->data.slot == slot) {
 			return ptr;
+		}
 	}
 	return NULL;
 }
@@ -155,15 +152,18 @@ double get_pinch_scale(touch_list *touches) {
 	{
 		count++;
 
-		old += sqrt(pow(center->startx - iter->data.startx,2) + pow(center->starty - iter->data.starty,2));
-		new += sqrt(pow(center->curx - iter->data.curx,2) + pow(center->cury - iter->data.cury,2));
+		old += sqrt(
+			pow(center->startx - iter->data.startx,2) +
+			pow(center->starty - iter->data.starty,2));
+		new += sqrt(
+			pow(center->curx - iter->data.curx,2) +
+			pow(center->cury - iter->data.cury,2));
 		iter = iter->next;
 	}
 	old /= count;
 	new /= count;
 
 	free(center);
-
 	return new / old;
 }
 
@@ -224,8 +224,6 @@ typedef struct libtouch_action {
 	};
 } libtouch_action;
 
-
-
 typedef struct libtouch_gesture {
 	libtouch_action **actions;
 	uint32_t n_actions;
@@ -238,7 +236,6 @@ typedef struct libtouch_engine {
 	libtouch_target **targets;
 	uint32_t n_targets;
 } libtouch_engine;
-
 
 typedef struct libtouch_gesture_progress {
 	libtouch_gesture *gesture;
@@ -255,7 +252,6 @@ typedef struct libtouch_progress_tracker {
 	uint32_t n_gestures;
 } libtouch_progress_tracker;
 
-
 libtouch_engine *libtouch_engine_create() {
 	libtouch_engine *e = malloc(sizeof(libtouch_engine));
 	e->targets = NULL;
@@ -265,8 +261,10 @@ libtouch_engine *libtouch_engine_create() {
 	return e;
 }
 
-libtouch_progress_tracker *libtouch_progress_tracker_create(libtouch_engine *engine) {
-	libtouch_progress_tracker *t = calloc(sizeof(libtouch_progress_tracker), 1);
+libtouch_progress_tracker *libtouch_progress_tracker_create(
+			  libtouch_engine *engine) {
+	libtouch_progress_tracker *t =
+		calloc(sizeof(libtouch_progress_tracker), 1);
 
 	t->gesture_progress = calloc(sizeof(libtouch_gesture_progress),
 				     engine->n_gestures);
@@ -305,7 +303,6 @@ libtouch_gesture *libtouch_gesture_create(libtouch_engine *engine) {
 	return gesture;
 }
 
-
 void libtouch_action_move_tolerance(libtouch_action *action, double min) {
 	action->move_tolerance = min;
 }
@@ -321,7 +318,6 @@ void libtouch_engine_move_tolerance(libtouch_engine *engine, double min) {
 		libtouch_gesture_move_tolerance(engine->gestures[i], min);
 	}
 }
-
 
 libtouch_target *libtouch_target_create(libtouch_engine *engine,
 					double x, double y,
@@ -356,7 +352,8 @@ bool libtouch_target_contains(libtouch_target *target, double x, double y){
 }
 
 void libtouch_progress_register_touch(libtouch_progress_tracker *t,
-				      uint32_t timestamp, int slot, enum libtouch_touch_mode mode,
+				      uint32_t timestamp, int slot,
+				      enum libtouch_touch_mode mode,
 				      double x, double y) {
 	libtouch_gesture *g;
 	libtouch_action *a;
@@ -415,7 +412,6 @@ touch_data *get_touch_slot(libtouch_gesture_progress *g, int slot) {
 	return &t->data;
 }
 
-
 void libtouch_progress_register_move(libtouch_progress_tracker *t,
 				     uint32_t timestamp, int slot,
 				     double nx, double ny) {
@@ -450,7 +446,6 @@ void libtouch_progress_register_move(libtouch_progress_tracker *t,
 
 		double rot,scl,distance,wrong,threshold;
 
-		
 		switch (a->action_type) {
 		case LIBTOUCH_ACTION_TOUCH:
 		case LIBTOUCH_ACTION_DELAY:
@@ -461,18 +456,21 @@ void libtouch_progress_register_move(libtouch_progress_tracker *t,
 		case LIBTOUCH_ACTION_MOVE:
 			if(a->target != NULL) {
 				
-				if(libtouch_target_contains(a->target, avg->curx, avg->cury)) {
+				if(libtouch_target_contains(
+					   a->target, avg->curx, avg->cury)) {
 					p->completed_actions++;
 					p->action_progress = 0;
 				}
 			} else {
 				//TODO: Handle movement in direction.
 				distance = distance_dragged(avg);
-				wrong = get_incorrect_drag_distance(avg,a->move.dir);
+				wrong = get_incorrect_drag_distance(
+					avg,a->move.dir);
 				if (wrong > a->move_tolerance) {
 				  libtouch_gesture_reset_progress(p);
 				} else {
-					p->action_progress = (distance - wrong) / a->threshold;
+					p->action_progress = (distance - wrong)/
+						a->threshold;
 					if (p->action_progress > 1) {
 						p->completed_actions++;
 						p->action_progress = 0;
@@ -490,9 +488,12 @@ void libtouch_progress_register_move(libtouch_progress_tracker *t,
 				threshold = ((double) a->threshold) / 100.0;
 				scl = get_pinch_scale(p->touches);
 				if(a->pinch.dir == LIBTOUCH_PINCH_OUT) {
-					p->action_progress = (scl - 1.0) / (threshold - 1.0);
+					p->action_progress =
+						(scl - 1.0) / (threshold - 1.0);
 				} else {
-					p->action_progress = 1.0 - (scl - threshold) / (1.0 - threshold);
+					p->action_progress =
+						1.0 - (scl - threshold) /
+						(1.0 - threshold);
 				}
 				p->action_progress *= 100;
 				if(p->action_progress > 0.9) {
@@ -518,11 +519,6 @@ void libtouch_progress_register_move(libtouch_progress_tracker *t,
 	}
 }
 
-
-
-
-
-
 void libtouch_add_action(libtouch_gesture *gesture, libtouch_action *action){
 
 	libtouch_action **new_array = malloc(sizeof(libtouch_action*)
@@ -546,8 +542,9 @@ libtouch_action *create_action(){
 	return action;
 }
 
-struct libtouch_action *libtouch_gesture_add_touch(struct libtouch_gesture *gesture,
-						   uint32_t mode) {
+struct libtouch_action *libtouch_gesture_add_touch(
+		       struct libtouch_gesture *gesture,
+		       uint32_t mode) {
 	libtouch_action *action = create_action();
 	action->action_type = LIBTOUCH_ACTION_TOUCH;
 	action->touch.mode = mode;
@@ -556,8 +553,9 @@ struct libtouch_action *libtouch_gesture_add_touch(struct libtouch_gesture *gest
 	
 }
 
-struct libtouch_action *libtouch_gesture_add_move(struct libtouch_gesture *gesture,
-						  uint32_t direction) {
+struct libtouch_action *libtouch_gesture_add_move(
+       		       struct libtouch_gesture *gesture,
+		       uint32_t direction) {
 	libtouch_action *action = create_action();
 	action->action_type = LIBTOUCH_ACTION_MOVE;
 	action->move.dir = direction;
@@ -565,8 +563,8 @@ struct libtouch_action *libtouch_gesture_add_move(struct libtouch_gesture *gestu
 	return action;
 }
 
-struct libtouch_action *libtouch_gesture_add_rotate(struct libtouch_gesture *gesture,
-						    uint32_t direction) {
+struct libtouch_action *libtouch_gesture_add_rotate(
+       		       struct libtouch_gesture *gesture, uint32_t direction) {
 	libtouch_action *action = create_action();
 	action->action_type = LIBTOUCH_ACTION_ROTATE;
 	action->rotate.dir = direction;
@@ -574,8 +572,9 @@ struct libtouch_action *libtouch_gesture_add_rotate(struct libtouch_gesture *ges
 	return action;
 }
 
-struct libtouch_action *libtouch_gesture_add_pinch(struct libtouch_gesture *gesture,
-						   uint32_t direction) {
+struct libtouch_action *libtouch_gesture_add_pinch(
+       		       struct libtouch_gesture *gesture,
+		       uint32_t direction) {
 	libtouch_action *action = create_action();
 	action->action_type = LIBTOUCH_ACTION_PINCH;
 	action->pinch.dir = direction;
@@ -583,8 +582,9 @@ struct libtouch_action *libtouch_gesture_add_pinch(struct libtouch_gesture *gest
 	return action;
 }
 
-struct libtouch_action *libtouch_gesture_add_delay(struct libtouch_gesture *gesture,
-						   uint32_t duration) {
+struct libtouch_action *libtouch_gesture_add_delay(
+       		       struct libtouch_gesture *gesture,
+		       uint32_t duration) {
 	libtouch_action *action = create_action();
 	action->action_type = LIBTOUCH_ACTION_DELAY;
 	libtouch_add_action(gesture, action);
@@ -607,13 +607,15 @@ void libtouch_action_set_duration(libtouch_action *action,
 	action->duration_ms = duration_ms;
 }
 
-double libtouch_gesture_progress_get_progress(libtouch_gesture_progress *gesture) {
+double libtouch_gesture_progress_get_progress(
+		libtouch_gesture_progress *gesture) {
 	double n_actions = ((double)gesture->gesture->n_actions);
 	double n_complete= ((double)gesture->completed_actions);
 	double current_pr= ((double)gesture->action_progress);
 	return (n_complete + current_pr) / n_actions;
 
 }
+
 void libtouch_gesture_reset_progress(libtouch_gesture_progress *progress) {
 	while(progress->touches != NULL) {
 		touch_list *l = progress->touches;
@@ -624,27 +626,29 @@ void libtouch_gesture_reset_progress(libtouch_gesture_progress *progress) {
 	progress->action_progress = 0;
 }
 
-libtouch_gesture_progress *libtouch_gesture_get_progress(libtouch_progress_tracker *t,
-							 uint32_t index) {
+libtouch_gesture_progress *libtouch_gesture_get_progress(
+		libtouch_progress_tracker *t,
+		uint32_t index) {
 	if(index > t->n_gestures - 1)
 		return NULL;
 
 	return &t->gesture_progress[index];
 }
 
-libtouch_action *libtouch_gesture_get_current_action(libtouch_gesture_progress *progress) {
+libtouch_action *libtouch_gesture_get_current_action(
+		libtouch_gesture_progress *progress) {
 	return progress->gesture->actions[progress->completed_actions];
 }
 
-
-libtouch_gesture *libtouch_handle_finished_gesture(libtouch_progress_tracker *tracker) {
+libtouch_gesture *libtouch_handle_finished_gesture(
+		 libtouch_progress_tracker *tracker) {
 	for(int i = 0; i < tracker->n_gestures; i++) {
-		if(libtouch_gesture_progress_get_progress(&tracker->gesture_progress[i]) > 0.9) {
-			libtouch_gesture_reset_progress(&tracker->gesture_progress[i]);
+		if(libtouch_gesture_progress_get_progress(
+				&tracker->gesture_progress[i]) > 0.9) {
+			libtouch_gesture_reset_progress(
+				&tracker->gesture_progress[i]);
 			return tracker->gesture_progress[i].gesture;
 		}
 	}
-	return NULL;
-	
+	return NULL;	
 }
-
