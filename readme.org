@@ -2,9 +2,8 @@
 #+DESCRIPTION: Libtouch is a library for touch gestures created under the guidance of the Sway project.
 
 * API
-THIS IS A WIP
 ** Target
-Represents an area or region on the screen. within which an action must take place.
+Represents an area or region on the screen within which an action must take place.
 
 For movement actions, it represents where the movement must end.
 ** Action
@@ -17,7 +16,7 @@ The possible actions are
 - Delay
 Each action can have
 *** Treshold
-Decides how much/how many/etc the action must be performed. E.g. the number of fingers for a touch, or the lenght of a movement.
+Decides how much/how many/etc the action must be performed. E.g. the number of fingers for a touch, or the length of a movement.
 *** Target
 Where the action must take place. A movement is considered complete when it reaches the target.
 *** Duration
@@ -27,13 +26,14 @@ How much is minimum movement, before it is regarded as actual movement. E.g. a t
 ** Gesture
 A gesture is a series of actions, each must be completed before the next begins.
 ** Engine
-The `libtouch_engine` is responsible for controlling the memory allocation and freeing of other structures, as well as keeping them nice and tidy to be able to check them all.
+The ~libtouch_engine~ is responsible for controlling the memory allocation and freeing of other structures, as well as keeping them nice and tidy to be able to check them all.
 
 The inner state is updated through the functions
-
+** Progress Tracker
+When finished with creating all gestures, one or more /progress trackers/ can be created. Each tracker independently tracks input. One for each /seat/, for instance.
 #+BEGIN_SRC C
-libtouch_engine_register_move
-libtouch_engine_register_touch
+libtouch_progress_register_move
+libtouch_progress_register_touch
 #+END_SRC
 
 * Examples
