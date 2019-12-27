@@ -1,6 +1,6 @@
 #+TITLE: Libtouch
 #+DESCRIPTION: Libtouch is a library for touch gestures created under the guidance of the Sway project.
-
+Due to not having touch-screen hardware any more, and working on my degree, this project is *dead*, looking to be revived by anyone who wants to continue where I left off.
 * API
 ** Target
 Represents an area or region on the screen within which an action must take place.
